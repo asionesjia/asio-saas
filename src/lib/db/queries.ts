@@ -5,7 +5,8 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth/session'
 
 export async function getUser() {
-  const sessionCookie = (await cookies()).get('session')
+  const cookieStore = await cookies()
+  const sessionCookie = cookieStore.get('session')
   if (!sessionCookie || !sessionCookie.value) {
     return null
   }

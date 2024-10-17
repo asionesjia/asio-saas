@@ -13,6 +13,15 @@ export const users = pgTable('users', {
   deletedAt: timestamp('deleted_at'),
 })
 
+export const otps = pgTable('otps', {
+  id: serial('id').primaryKey(),
+  phone: varchar('phone', { length: 15 }),
+  otp: varchar('otp', { length: 6 }),
+  token: varchar('token', { length: 512 }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  expiredAt: timestamp('expired_at').notNull(),
+})
+
 export const roles = pgTable('roles', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }),
@@ -212,8 +221,10 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
 
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
-export type Role = typeof roles.$inferInsert
-export type UserRoleConnection = typeof usersRolesConnections.$inferInsert
+export type Otp = typeof otps.$inferSelect
+export type NewOtp = typeof otps.$inferInsert
+export type Role = typeof roles.$inferSelect
+export type UserRoleConnection = typeof usersRolesConnections.$inferSelect
 export type Team = typeof teams.$inferSelect
 export type NewTeam = typeof teams.$inferInsert
 export type TeamMember = typeof teamMembers.$inferSelect

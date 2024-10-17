@@ -1,5 +1,5 @@
-import { Login } from '../login';
+import SignUpSms from './_components/sign-up-sms'
 
 export default function SignUpPage() {
-  return <Login mode="signup" />;
+  return <SignUpSms />
 }

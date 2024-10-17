@@ -6,7 +6,5 @@ export const env = createEnv({
   client: {
     PUBLIC_BASE_URL: z.string().url(),
   },
-  runtimeEnv: {
-    PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL,
-  },
+  runtimeEnv: process.env,
 })
