@@ -3,11 +3,13 @@ import { TeamDataWithMembers, User } from '@/lib/db/schema'
 import { getTeamForUser, getUser } from '@/lib/db/queries'
 import { redirect } from 'next/navigation'
 
-export type ActionState = {
-  error?: string
-  success?: string
-  [key: string]: any // This allows for additional properties
-}
+export type ActionState =
+  | {
+      error?: string
+      success?: string
+      [key: string]: any // This allows for additional properties
+    }
+  | undefined
 
 type ValidatedActionFunction<S extends z.ZodType<any, any>, T> = (
   data: z.infer<S>,
