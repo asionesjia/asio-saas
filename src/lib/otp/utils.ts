@@ -75,7 +75,9 @@ function generateOtpAndEncrypt(phone: string): EncryptedData {
   }
 }
 
-export async function sendOtp(phone: string): Promise<boolean> {
+export async function sendOtp(
+  phone: string,
+): Promise<{ token: string | null; error: string | null }> {
   const { otp, token, expiredAt } = generateOtpAndEncrypt(phone)
 
   try {
@@ -91,10 +93,10 @@ export async function sendOtp(phone: string): Promise<boolean> {
         token: token,
         expiredAt: expiredAt,
       })
-      return true
+      return { token, error: null }
     }
-    return false
+    return { token: null, error: '发送失败！' }
   } catch (error) {
-    return false
+    return { token: null, error: '发送失败！' }
   }
 }

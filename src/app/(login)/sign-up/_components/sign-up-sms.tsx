@@ -21,6 +21,7 @@ const SignUpSms = ({}: SignUpSmsProps) => {
     SendOtpAction,
     undefined,
   )
+  console.log(state)
   return (
     <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
       <form className="space-y-6" action={formAction}>
@@ -47,10 +48,10 @@ const SignUpSms = ({}: SignUpSmsProps) => {
           <AnimatePresence>
             {state && (
               <motion.div
-                className="flex"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
+                className="flex overflow-hidden"
+                initial={{ opacity: 0, width: '0' }}
+                animate={{ opacity: 1, width: 'auto' }}
+                transition={{ duration: 1 }}
               >
                 <InputOTP maxLength={6}>
                   <InputOTPGroup>
@@ -59,7 +60,7 @@ const SignUpSms = ({}: SignUpSmsProps) => {
                         key={index}
                         initial={{ opacity: 0, y: -10 }} // 初始状态
                         animate={{ opacity: 1, y: 0 }} // 结束状态
-                        transition={{ duration: 0.3, delay: index * 0.1 }} // 延迟动画
+                        transition={{ duration: 0.2, delay: index * 0.1 }} // 延迟动画
                       >
                         <InputOTPSlot index={index} />
                       </motion.div>
@@ -69,7 +70,10 @@ const SignUpSms = ({}: SignUpSmsProps) => {
               </motion.div>
             )}
           </AnimatePresence>
-          <motion.div className={`transition-all ${state ? 'w-1/4' : 'w-full'}`}>
+          <motion.div
+            className={`transition-all ${state ? 'w-1/4' : 'w-full'}`}
+            transition={{ duration: 1 }}
+          >
             <Button type="submit" disabled={pending} className="w-full">
               {pending ? (
                 <>

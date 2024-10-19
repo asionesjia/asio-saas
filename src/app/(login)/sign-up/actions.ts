@@ -20,8 +20,8 @@ export const SendOtpAction = validatedAction(sendOtpSchema, async (data, formDat
   const { phone } = data
 
   try {
-    await sendOtp(phone)
+    return await sendOtp(phone)
   } catch (error) {
-    return { error: '发送失败。' }
+    return { token: null, error: '发送失败。' }
   }
 })
