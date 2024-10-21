@@ -1,7 +1,7 @@
 {
 	"private": true,
 	"scripts": {
-		"dev": "next dev --turbo",
+		"dev": "NODE_OPTIONS='--inspect' next dev --turbo",
 		"build": "next build",
 		"start": "next start",
 		"db:setup": "npx tsx src/lib/db/setup.ts",
