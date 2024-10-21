@@ -24,6 +24,8 @@ import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { getUser, getUserWithTeam } from '@/lib/db/queries'
 import { validatedAction, validatedActionWithUser } from '@/lib/auth/middleware'
+import { or } from 'drizzle-orm/sql/expressions/conditions'
+import { decryptData } from '@/lib/otp/utils'
 
 async function logActivity(
   teamId: number | null | undefined,
@@ -68,7 +70,9 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
 
   const { user: foundUser, team: foundTeam } = userWithTeam[0]
 
-  const isPasswordValid = await comparePasswords(password, foundUser.passwordHash)
+  const isPasswordValid = foundUser.passwordHash
+    ? await comparePasswords(password, foundUser.passwordHash)
+    : false
 
   if (!isPasswordValid) {
     return { error: 'Invalid email or password. Please try again.' }
@@ -89,23 +93,76 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
 })
 
 const signUpSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  inviteId: z.string().optional(),
+  name: z.string().max(16).optional(),
+  username: z.string().max(32).optional(),
+  phone: z
+    .string()
+    .regex(/^1[3-9]\d{9}$/)
+    .optional(),
+  email: z.string().email().optional(),
+  password: z.string().min(8).optional(),
+  inviteId: z.string().optional().optional(),
+  otpCode: z
+    .string()
+    .regex(/^\d{6}$/)
+    .optional(),
+  otpToken: z.string().optional(),
+  isOtpValidated: z.enum(['true', 'false', '']).optional(),
 })
 
 export const signUp = validatedAction(signUpSchema, async (data, formData) => {
-  const { email, password, inviteId } = data
+  const { name, username, phone, email, password, inviteId, otpCode, otpToken, isOtpValidated } =
+    data
 
-  const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1)
+  if (!otpCode || !otpToken) {
+    return { error: '验证码校验失败。' }
+  }
+
+  try {
+    const dataStore = decryptData(otpToken)
+    if (dataStore.phone !== phone || dataStore.otp !== otpCode) {
+      return {
+        data: data,
+        isOtpValidated: 'false',
+        error: '验证码错误。',
+      }
+    }
+    if (dataStore.expiredAt < new Date(Date.now())) {
+      return {
+        data: data,
+        isOtpValidated: 'false',
+        error: '验证码已过期，请重新申请。',
+      }
+    }
+    if (!isOtpValidated || isOtpValidated === 'false') {
+      return { data: data, isOtpValidated: 'true', error: null }
+    }
+  } catch (error) {
+    return { data: data, isOtpValidated: 'false', error: '验证码校验失败，请稍后重试。' }
+  }
+
+  const conditions: any[] = []
+
+  if (username) conditions.push(eq(users.username, username))
+  if (phone) conditions.push(eq(users.phone, phone))
+  if (email) conditions.push(eq(users.email, email))
+
+  const existingUser = await db
+    .select()
+    .from(users)
+    .where(or(...conditions))
+    .limit(1)
 
   if (existingUser.length > 0) {
     return { error: 'Failed to create user. Please try again.' }
   }
 
-  const passwordHash = await hashPassword(password)
+  const passwordHash = password && (await hashPassword(password))
 
   const newUser: NewUser = {
+    name,
+    phone,
+    username,
     email,
     passwordHash,
   }
@@ -132,7 +189,7 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
   let userRole: number[]
   let createdTeam: typeof teams.$inferSelect | null = null
 
-  if (inviteId) {
+  if (inviteId && email) {
     // Check if there's a valid invitation
     const [invitation] = await db
       .select()
@@ -185,7 +242,7 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
   } else {
     // Create a new team if there's no invitation
     const newTeam: NewTeam = {
-      name: `${email}'s Team`,
+      name: `${name || username || email || phone || 'Default User'}'s Team`,
     }
 
     ;[createdTeam] = await db.insert(teams).values(newTeam).returning()
@@ -248,7 +305,9 @@ export const updatePassword = validatedActionWithUser(
   async (data, _, user) => {
     const { currentPassword, newPassword } = data
 
-    const isPasswordValid = await comparePasswords(currentPassword, user.passwordHash)
+    const isPasswordValid = user?.passwordHash
+      ? await comparePasswords(currentPassword, user.passwordHash)
+      : true
 
     if (!isPasswordValid) {
       return { error: 'Current password is incorrect.' }
@@ -280,7 +339,9 @@ export const deleteAccount = validatedActionWithUser(deleteAccountSchema, async 
   const { password } = data
   const _cookies = await cookies()
 
-  const isPasswordValid = await comparePasswords(password, user.passwordHash)
+  const isPasswordValid = user?.passwordHash
+    ? await comparePasswords(password, user.passwordHash)
+    : true
   if (!isPasswordValid) {
     return { error: 'Incorrect password. Account deletion failed.' }
   }
