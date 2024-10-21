@@ -9,7 +9,6 @@ function getRemainingSeconds(timedOutAt: Date): number {
   if (timeDiff <= 0) {
     return 0
   }
-  console.log(Math.ceil(timeDiff / 1000))
   return Math.ceil(timeDiff / 1000) // 返回剩余秒数
 }
 
@@ -46,7 +45,6 @@ const ResendButton = React.forwardRef<HTMLButtonElement, ResendButtonProps>(
         return
       }
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
-      console.log(timeLeft)
       return () => clearTimeout(timer) // 清理定时器，避免内存泄漏
     }, [timeLeft])
 
@@ -62,6 +60,9 @@ const ResendButton = React.forwardRef<HTMLButtonElement, ResendButtonProps>(
     React.useEffect(() => {
       if (formPending) {
         setIsPending(true)
+      } else {
+        const timer = setTimeout(() => setIsPending(false), 100)
+        return () => clearTimeout(timer) // 清理定时器，避免内存泄漏
       }
     }, [formPending])
 

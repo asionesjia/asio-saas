@@ -35,9 +35,11 @@ function encryptData(data: object): string {
 interface DecryptedData {
   phone: string
   otp: string
+  token: string
+  expiredAt: Date
 }
 
-function decryptData(ciphertext: string): DecryptedData {
+export function decryptData(ciphertext: string): DecryptedData {
   const [ivHex, encrypted] = ciphertext.split(':') // 分离 IV 和加密后的数据
   const iv = Buffer.from(ivHex, 'hex') // 将 IV 转为 Buffer
   const decipher = crypto.createDecipheriv(
@@ -77,26 +79,28 @@ function generateOtpAndEncrypt(phone: string): EncryptedData {
 
 export async function sendOtp(
   phone: string,
-): Promise<{ token: string | null; error: string | null }> {
+): Promise<{ token: string | null; expiredAt: Date | null; error: string | null }> {
   const { otp, token, expiredAt } = generateOtpAndEncrypt(phone)
 
   try {
     const sendResponse = await sendSms(
       phone,
-      `验证码：${otp}（10分钟内有效）。您正在注册Asio账户，请勿将验证码告知他人。【时代引力】`,
+      `【时代引力】验证码：${otp}（10分钟内有效）。您正在注册Asio账户，请勿将验证码告知他人。`,
     )
-    console.log(sendResponse)
+    console.log(
+      `【时代引力】验证码：${otp}（10分钟内有效）。您正在注册Asio账户，请勿将验证码告知他人。`,
+    )
     if (sendResponse.ReturnStatus === 'Success' && sendResponse.Message === 'ok') {
-      await db.insert(otps).values({
+      db.insert(otps).values({
         phone: phone,
         otp: otp,
         token: token,
         expiredAt: expiredAt,
       })
-      return { token, error: null }
+      return { token: token, expiredAt: expiredAt, error: null }
     }
-    return { token: null, error: '发送失败！' }
+    return { token: null, expiredAt: null, error: '发送失败！' }
   } catch (error) {
-    return { token: null, error: '发送失败！' }
+    return { token: null, expiredAt: null, error: '发送失败！' }
   }
 }
