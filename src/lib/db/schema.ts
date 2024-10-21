@@ -4,10 +4,10 @@ import { relations } from 'drizzle-orm'
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }),
-  username: varchar('username', { length: 50 }).unique(),
+  username: varchar('username', { length: 32 }).unique(),
   email: varchar('email', { length: 100 }).unique(),
   phone: varchar('phone', { length: 15 }).unique(),
-  passwordHash: text('password_hash').notNull(),
+  passwordHash: text('password_hash'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   deletedAt: timestamp('deleted_at'),
